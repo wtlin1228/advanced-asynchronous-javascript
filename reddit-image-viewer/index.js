@@ -39,6 +39,19 @@ function getSubImages(sub) {
   }
 }
 
+function preloadImage(src) {
+  return Observable.defer(() => {
+    const image = new Image();
+    const success = Observable.fromEvent(image, "load").map(() => src);
+    const failure = Observable.fromEvent(image, "error").map(
+      () => LOADING_ERROR_URL
+    );
+    image.src = src;
+
+    return Observable.merge(success, failure);
+  });
+}
+
 // ---------------------- INSERT CODE  HERE ---------------------------
 const subs = Observable.concat(
   Observable.of(subSelect.value),
@@ -88,14 +101,3 @@ images.subscribe({
     );
   },
 });
-
-function preloadImage(src) {
-  const image = new Image();
-  const success = Observable.fromEvent(image, "load").map(() => src);
-  const failure = Observable.fromEvent(image, "error").map(
-    () => LOADING_ERROR_URL
-  );
-  image.src = src;
-
-  return Observable.merge(success, failure);
-}
