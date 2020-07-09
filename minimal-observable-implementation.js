@@ -87,6 +87,7 @@ class Observable {
 
   static timeout(time) {
     return new Observable(function subscribe(observer) {
+      console.log("CALLING SETTIMEOUT");
       const handle = setTimeout(() => {
         observer.next();
         observer.complete();
@@ -164,20 +165,81 @@ class Observable {
       return subscription;
     });
   }
+
+  share() {
+    const subject = new Subject();
+    this.subscribe(subject);
+    return subject;
+  }
+}
+
+class Subject extends Observable {
+  constructor() {
+    super(function subscribe(observer) {
+      const self = this;
+      self.observers.add(observer);
+
+      return {
+        unsubscribe() {
+          self.observables.delete(observer);
+        },
+      };
+    });
+
+    this.observers = new Set();
+  }
+
+  next(v) {
+    for (let observer of [...this.observers]) {
+      observer.next(v);
+    }
+  }
+
+  error(v) {
+    for (let observer of [...this.observers]) {
+      observer.error(v);
+    }
+  }
+
+  complete() {
+    for (let observer of [...this.observers]) {
+      observer.complete();
+    }
+  }
 }
 
 // Example
-const button = document.getElementById("btn");
-const click$ = Observable.fromEvent(button, "click");
+// const button = document.getElementById("btn");
+// const click$ = Observable.fromEvent(button, "click");
 
-click$
-  .map((e) => e.offsetX)
-  .filter((offsetX) => offsetX >= 10)
-  .subscribe({
-    next(v) {
-      console.log(v);
-    },
-    error(err) {
-      console.log(err);
-    },
-  });
+// click$
+//   .map((e) => e.offsetX)
+//   .filter((offsetX) => offsetX >= 10)
+//   .subscribe({
+//     next(v) {
+//       console.log(v);
+//     },
+//     error(err) {
+//       console.log(err);
+//     },
+//   });
+
+const timeout = Observable.timeout(500).share();
+
+timeout.subscribe({
+  next(v) {
+    console.log(v);
+  },
+  complete() {
+    console.log("done");
+  },
+});
+
+timeout.subscribe({
+  next(v) {
+    console.log(v);
+  },
+  complete() {
+    console.log("done");
+  },
+});
