@@ -116,6 +116,16 @@ class Observable {
     });
   }
 
+  static of(value) {
+    return new Observable(function subscribe(observer) {
+      observer.next(value);
+      observer.complete();
+      return {
+        subscribe() {},
+      };
+    });
+  }
+
   map(projection) {
     const self = this;
     return new Observable(function subscribe(observer) {
@@ -171,6 +181,23 @@ class Observable {
     this.subscribe(subject);
     return subject;
   }
+
+  observeOn(scheduler) {
+    const self = this;
+    return new Observable(function subscribe(observer) {
+      self.subscribe({
+        next(v) {
+          scheduler(() => observer.next(v));
+        },
+        error(err) {
+          scheduler(() => observer.error(err));
+        },
+        complete() {
+          scheduler(() => observer.complete());
+        },
+      });
+    });
+  }
 }
 
 class Subject extends Observable {
@@ -208,7 +235,7 @@ class Subject extends Observable {
   }
 }
 
-// Example
+// Example: Basic
 // const button = document.getElementById("btn");
 // const click$ = Observable.fromEvent(button, "click");
 
@@ -224,22 +251,35 @@ class Subject extends Observable {
 //     },
 //   });
 
-const timeout = Observable.timeout(500).share();
+// Example: Subject
+// const timeout = Observable.timeout(500).share();
 
-timeout.subscribe({
-  next(v) {
-    console.log(v);
-  },
-  complete() {
-    console.log("done");
-  },
-});
+// timeout.subscribe({
+//   next(v) {
+//     console.log(v);
+//   },
+//   complete() {
+//     console.log("done");
+//   },
+// });
 
-timeout.subscribe({
-  next(v) {
-    console.log(v);
-  },
-  complete() {
-    console.log("done");
-  },
-});
+// timeout.subscribe({
+//   next(v) {
+//     console.log(v);
+//   },
+//   complete() {
+//     console.log("done");
+//   },
+// });
+
+// Example: Scheduler
+Observable.of(5)
+  .observeOn((action) => setTimeout(action, 5000))
+  .subscribe({
+    next(v) {
+      console.log(v);
+    },
+    complete() {
+      console.log("done");
+    },
+  });
